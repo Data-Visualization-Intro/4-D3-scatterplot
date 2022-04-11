@@ -748,3 +748,42 @@ const yAxisLabel = yAxis
   .style("text-anchor", "middle");
 }
 ```
+
+## Adding Color
+
+In our dataset, each datapoint records the cloud cover for that day.
+
+`console.table(dataset[0])`
+
+Let's bring in the amount of cloud cover for each day to see if there's a correlation with the other metrics. We'll show how the amount of cloud cover varies based on humidity and dew point by adding a color scale.
+
+Looking at a value in our dataset, we can see that the amount of cloud cover exists at the key cloudCover. Let's add another data accessor function near the top of our file:
+
+`const colorAccessor = d => d.cloudCover`
+
+Create another scale at the bottom of our Create scales step.
+
+So far, we've only looked at linear scales that convert numbers to other numbers. Scales can also convert a number into a color — we just need to replace the domain with a range of colors.
+
+Let's make low cloud cover days be light blue and very cloudy days dark blue - that's a good semantic mapping.
+
+```js
+const colorScale = d3
+  .scaleLinear()
+  .domain(d3.extent(dataset, colorAccessor))
+  .range(["skyblue", "darkslategrey"]);
+```
+
+If we log `colorScale(0.1)` to the console, we should see a color value, such as `rgb(126, 193, 219)`.
+
+All that's left to do is to update how we set the fill of each dot. Let's find where we're doing that now.
+
+`.attr("fill", "cornflowerblue")`
+
+Instead of making every dot blue, let's use our `colorAccessor()` to grab the precipitation value, then pass that into our `colorScale()`:
+
+`.attr("fill", d => colorScale(colorAccessor(d)))`
+
+When we refresh our webpage, we should see our finished scatter plot with dots of various blues.
+
+> For a complete, accessible chart, it would be a good idea to add a legend to explain what our colors mean. We'll skip this for now, to keep things simple.
