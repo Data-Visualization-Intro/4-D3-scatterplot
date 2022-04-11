@@ -2,12 +2,14 @@
 
 Let's create another chart that's a little more complex.
 
-There are endless questions we could ask our weather dataset — many of them ask about the relationship between different metrics. Let's investigate these two metrics:
+There are many questions we could ask our weather dataset about the relationship between different metrics. Let's investigate these two metrics:
 
-- dew point is the highest temperature (°F) at which dew droplets form
-- humidity is the amount of water vapor in the air
+- dew point - the highest temperature (°F) at which dew droplets form
+- humidity - the amount of water vapor in the air
 
-I expect them to be correlated — high humidity should cause a higher dew point temperature.
+We expect them to be correlated — high humidity should cause a higher dew point temperature.
+
+Here is the [chart](https://dataviz-exercises.netlify.app/dew-point/index.html) we are going to build.
 
 ## Deciding the Chart Type
 
@@ -735,14 +737,14 @@ const yAxisLabel = yAxis
 We'll need to rotate this label to fit next to the y axis. To rotate it around its center, we set its CSS property text-anchor to middle:
 
 ```js
-  const yAxisLabel = yAxis
-    .append("text")
-    .attr("x", -dimensions.boundedHeight / 2)
-    .attr("y", -dimensions.margin.left + 10)
-    .attr("fill", "black")
-    .style("font-size", "1.4em")
-    .text("Relative humidity")
-    .style("transform", "rotate(-90deg)")
-    .style("text-anchor", "middle");
+const yAxisLabel = yAxis
+  .append("text")
+  .attr("x", -dimensions.boundedHeight / 2)
+  .attr("y", -dimensions.margin.left + 10)
+  .attr("fill", "black")
+  .style("font-size", "1.4em")
+  .text("Relative humidity")
+  .style("transform", "rotate(-90deg)")
+  .style("text-anchor", "middle");
 }
 ```
