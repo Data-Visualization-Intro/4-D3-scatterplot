@@ -428,18 +428,7 @@ We'll see these changes to our selection object in three ways:
 - an `_enter` key is added that lists any data points that don't already have an element rendered
 - an `_exit` key is added that lists any data points that are already rendered but aren't in the provided dataset
 
-<svg width="640" height="480" viewBox="0 0 640 480" fill="none" xmlns="http://www.w3.org/2000/svg">
-<rect width="640" height="480" fill="white"/>
-<circle cx="421" cy="250" r="188" fill="#9A9EFF"/>
-<circle cx="219" cy="250" r="188" fill="#9AB6FF"/>
-<path fill-rule="evenodd" clip-rule="evenodd" d="M320 408.593C372.311 375.21 407 316.656 407 250C407 183.344 372.311 124.79 320 91.4066C267.689 124.79 233 183.344 233 250C233 316.656 267.689 375.21 320 408.593Z" fill="#8083D0"/>
-<text fill="black" xml:space="preserve" style="white-space: pre" font-family="Arial" font-size="24" letter-spacing="0em"><tspan x="76" y="42.3203">Dataset</tspan></text>
-<text fill="black" xml:space="preserve" style="white-space: pre" font-family="Arial" font-size="24" letter-spacing="0em"><tspan x="76" y="216.32">new&#10;</tspan><tspan x="76" y="244.32">_enter</tspan></text>
-<text fill="black" xml:space="preserve" style="white-space: pre" font-family="Arial" font-size="24" letter-spacing="0em"><tspan x="275" y="216.32">existing&#10;</tspan><tspan x="275" y="244.32">_groups</tspan></text>
-<text fill="black" xml:space="preserve" style="white-space: pre" font-family="Arial" font-size="24" letter-spacing="0em"><tspan x="475" y="216.32">old&#10;</tspan><tspan x="475" y="244.32">_exit</tspan></text>
-<text fill="black" xml:space="preserve" style="white-space: pre" font-family="Arial" font-size="24" letter-spacing="0em"><tspan x="298" y="42.3203">DOM</tspan></text>
-<text fill="black" xml:space="preserve" style="white-space: pre" font-family="Arial" font-size="24" letter-spacing="0em"><tspan x="511" y="42.3203">Elements</tspan></text>
-</svg>
+![venn diagram](samples/venn.png)
 
 Let's get an idea of what that updated selection object looks like by logging it to the console.
 
