@@ -57,6 +57,8 @@ We can see the metrics we're interested in as humidity and dewPoint. Let's use t
 ```js
 const xAccessor = (d) => d.dewPoint;
 const yAccessor = (d) => d.humidity;
+console.log(data[0]);
+console.log(xAccessor(data[0]));
 ```
 
 Code:
@@ -97,11 +99,40 @@ const width = d3.min([window.innerWidth * 0.9, window.innerHeight * 0.9]);
 
 > There is a native browser method (`Math.min`) that will also find the lowest number. There are a few benefits to `d3.min`:
 
+```js
+const width = d3.min([window.innerWidth * 0.9, window.innerHeight * 0.9]);
+const arr = [6, 1, 2, 3, undefined];
+console.log({
+  d3: d3.min(arr),
+  Math: Math.min(...arr),
+});
+```
+
 - `Math.min` will count any nulls in the array as 0, whereas d3.min will ignore them
 - `Math.min` will return NaN if there is a value in the array that is undefined or can't be converted into a number, whereas d3.min will ignore it
 - `d3.min` will prevent the need to create another array of values if we need to use an accessor function
 - `Math.min` will return Infinity if the dataset is empty, whereas d3.min will return undefined
 - `Math.min` uses numeric order, whereas d3.min uses natural order, which allows it to handle strings. Make sure to convert your values to numbers beforehand
+
+D3.min also allows an accessor function:
+
+```js
+const width = d3.min([window.innerWidth * 0.9, window.innerHeight * 0.9]);
+const arr = [1, 2, 3];
+console.log({
+  d3: d3.min(arr, (d) => d * 2),
+  Math: Math.min(...arr),
+});
+```
+
+So we could get the smallest x value from our dataset:
+
+```js
+console.log({
+  d3: d3.min(dataset, xAccessor),
+  Math: Math.min(...arr),
+});
+```
 
 You can see how `d3.min` would be preferable when creating charts, especially when using dynamic data.
 
@@ -228,7 +259,7 @@ In this case, converting from temperature to pixels is easy: a temperature of 50
 
 But the relationship between our data and the pixel output is rarely so simple. What if our chart was 200 pixels wide? What if we have to handle negative temperatures?
 
-Mapping between metric values and pixels is one of the areas in which d3 scales shine.
+Mapping between metric values and pixels is one of the areas in which d3 shines.
 
 ### Finding the extents
 
@@ -240,6 +271,11 @@ D3 has a helper function we can use here: `d3.extent()` that takes two parameter
 - an accessor function that extracts the metric value from a data point. If not specified, this defaults to an identity function `d => d`.
 
 We'll pass `d3.extent()` our dataset and our `xAccessor()` function and get the min and max temperatures we need to handle (in `[min, max]` format).
+
+```js
+const xScale = d3.scaleLinear().domain(d3.extent(dataset, xAccessor));
+console.log(xScale.domain());
+```
 
 ```js
 const xScale = d3
@@ -284,6 +320,8 @@ const yScale = d3
   .range([dimensions.boundedHeight, 0])
   .nice();
 ```
+
+Note that we invert the values for the range since we want our chart to go from bottom to top (while svg measures from top to bottom).
 
 If you're curious about how `.nice()` modifies our y scale, log these values:
 
@@ -356,7 +394,7 @@ drawScatter();
 
 ## Step Five: Draw Data
 
-We'' discuss data joins - one of the trickiest parts of d3, and necessary for updating our charts & binding our visualization to data.
+We'll discuss data joins - one of the trickiest parts of d3, and necessary for updating our charts & binding our visualization to data.
 
 Drawing our scatter plot dots will be different from how we drew our timeline. Instead of one line covering all the data points we want one element per data point.
 
@@ -408,11 +446,21 @@ This will seem strange at first — we don't have any dots yet, why would we sel
 
 By using `const dots = bounds.selectAll("circle")` we're creating a d3 selection that is _aware of what elements already exist_. If we had already drawn part of our dataset, this selection would be aware of what dots were already drawn, and which need to be added.
 
-To tell the selection what our data look like, we'll pass our dataset to the selection's .data() method.
+```js
+const dots = bounds.selectAll("circle");
+console.log(dots);
+```
+
+This returns an empty array for `_groups`.
+
+To tell the selection what our data look like, we'll pass our dataset to the selection's `.data()` method.
 
 ```js
 const dots = bounds.selectAll("circle").data(dataset);
+console.log(dots);
 ```
+
+Once we pass the data in we log new items in the `select`: `enter` and `exit`.
 
 When we call `.data()` on our selection, we're joining our selected elements with our array of data points.
 
@@ -425,8 +473,8 @@ The returned selection will have:
 We'll see these changes to our selection object in three ways:
 
 - our selection object is updated to contain any overlap between existing DOM elements and data points
-- an `_enter` key is added that lists any data points that don't already have an element rendered
-- an `_exit` key is added that lists any data points that are already rendered but aren't in the provided dataset
+- an `_enter` key is added that lists any data points that don't already have an element rendered (365 here)
+- an `_exit` key is added that lists any data points that are already rendered but aren't in the provided dataset (0 here)
 
 ![venn diagram](samples/venn.png)
 
@@ -472,7 +520,12 @@ const dots = bounds.selectAll("circle").data(dataset).enter().append("circle");
 
 When we load our webpage we still have a blank page. However, we will be able to see 365 new empty `<circle>` elements in our bounds in the browser's Elements panel.
 
-Set the position and size of these circles:
+Set the position and size of the new entering circles using `.enter()`
+
+```js
+const dots = bounds.selectAll("circle").data(dataset).enter();
+console.log(dots);
+```
 
 ```js
 const dots = bounds
@@ -515,7 +568,7 @@ Let's add a function called `drawDots()` that mimics our dot drawing code. This 
 drawScatter();
 ```
 
-Add some logging and another slice after one second:
+Then, add some logging and another slice after one second:
 
 ```js
   // 5. Draw data
@@ -541,34 +594,6 @@ drawScatter();
 ```
 
 In the log we can see the exit array (the old or previously created dots) has a length of 100. These dots were not recreated.
-
-We can use `.merge()` to make all the dots blue:
-
-```js
-  // 5. Draw data
-  const drawDots = (dataset, color) => {
-    const dots = bounds.selectAll("circle").data(dataset);
-
-    console.log("dots", dots);
-
-    dots
-      .enter()
-      .append("circle")
-      // NEW
-      .merge(dots)
-      .attr("cx", (d) => xScale(xAccessor(d)))
-      .attr("cy", (d) => yScale(yAccessor(d)))
-      .attr("r", 5)
-      .attr("fill", color);
-  };
-  drawDots(dataset.slice(0, 100), "gray");
-
-  setTimeout(() => {
-    drawDots(dataset, "cornflowerblue");
-  }, 1000);
-}
-drawScatter();
-```
 
 Clean up the code to reset it back to:
 
@@ -662,7 +687,6 @@ async function drawScatter() {
   const dots = bounds.selectAll("circle").data(dataset);
 
   dots
-    // NEW
     .join("circle")
     .attr("cx", (d) => xScale(xAccessor(d)))
     .attr("cy", (d) => yScale(yAccessor(d)))
@@ -674,18 +698,16 @@ drawScatter();
 
 ## Step Six: Draw Peripherals
 
-Let's draw our axes, learn about the text SVG element and how to add (and rotate) labels - starting with the x axis.
+Let's draw our axes, review the text SVG element and how to add (and rotate) labels - starting with the x axis.
 
-We want our x axis to be:
+We want our x axis to be a line across the bottom with spaced "tick" marks that have
 
-- a line across the bottom
-- with spaced "tick" marks that have
 - labels for values per tick
 - a label for the axis overall
 
-To do this, we'll create our axis generator using `d3.axisBottom()`, then pass it:
+To do this, we'll create our axis generator using `d3.axisBottom()` and pass it:
 
-- our x scale so it knows what ticks to make (from the domain) and
+- our x scale so it knows what ticks to make (from the domain)
 - what size to be (from the range)
 
 ```js
@@ -701,7 +723,7 @@ const xAxis = bounds
   .style("transform", `translateY(${dimensions.boundedHeight}px)`);
 ```
 
-Let's create labels for our axis. Drawing text in an SVG is fairly straightforward - we need a `<text>` element, which can be positioned with an x and y attribute. We'll want to position it horizontally centered and slightly above the bottom of the chart.
+Let's create labels for our axis. We need a `<text>` element, which can be positioned with an x and y attribute. We'll want to position it horizontally centered and slightly above the bottom of the chart.
 
 `<text>` elements will display their children as text — we can set that with our selection's `.html()` method.
 
@@ -800,3 +822,313 @@ Instead of making every dot blue, let's use our `colorAccessor()` to grab the pr
 Refresh to see our finished scatter plot with dots of various blues.
 
 > For a complete, accessible chart, it would be a good idea to add a legend to explain what our colors mean. We'll return to this later.
+
+## Tooltip
+
+Let's add tooltips to our scatter plot. We want a tooltip to give us more information when we hover over a point in our chart.
+
+Note that the HTML for the tooltip is placed inside the wrapper:
+
+```html
+<div id="wrapper">
+  <div id="tooltip" class="tooltip">
+    <div class="tooltip-date">
+      <span id="date"></span>
+    </div>
+    <div class="tooltip-humidity">Humidity: <span id="humidity"></span></div>
+    <div class="tooltip-dew-point">Dew Point: <span id="dew-point"></span></div>
+  </div>
+</div>
+```
+
+We have the following CSS to define its look (note the `position: relative` on the wrapper and the `opacity` setting on the tooltip itself):
+
+```css
+.wrapper {
+  position: relative;
+}
+
+.x-axis-label {
+  fill: black;
+  font-size: 1.4em;
+  text-transform: capitalize;
+}
+
+.y-axis-label {
+  fill: black;
+  font-size: 1.4em;
+  text-anchor: middle;
+  transform: rotate(-90deg);
+}
+
+circle {
+  fill: cornflowerblue;
+}
+
+body {
+  display: flex;
+  justify-content: center;
+  padding: 3em 1em;
+  font-family: sans-serif;
+}
+
+.tooltip {
+  /* opacity: 0; */
+  position: absolute;
+  top: -14px;
+  left: 0;
+  padding: 0.6em 1em;
+  background: #fff;
+  text-align: center;
+  line-height: 1.4em;
+  font-size: 0.9em;
+  border: 1px solid #ddd;
+  z-index: 10;
+  transition: all 0.1s ease-out;
+  pointer-events: none;
+}
+
+.tooltip:before {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  width: 12px;
+  height: 12px;
+  background: white;
+  border: 1px solid #ddd;
+  border-top-color: transparent;
+  border-left-color: transparent;
+  transform: translate(-50%, 50%) rotate(45deg);
+  transform-origin: center center;
+  z-index: 10;
+}
+
+.tooltip-date {
+  margin-bottom: 0.2em;
+  font-weight: 600;
+  font-size: 1.1em;
+  line-height: 1.4em;
+}
+```
+
+At the bottom of the JS file, we'll select all of our <circle/> elements and add a mousenter and a mouseleave event.
+
+```js
+bounds
+  .selectAll("circle")
+  .on("mouseenter", onMouseEnter)
+  .on("mouseleave", onMouseLeave);
+```
+
+We know that we'll need to modify our `#tooltip` element, so let's assign that to a variable. Let's also define our onMouseEnter() and onMouseLeave() functions.
+
+```js
+const tooltip = d3.select("#tooltip");
+function onMouseEnter(event, d) {}
+function onMouseLeave() {}
+```
+
+Let's first fill out our `onMouseEnter()` function. We want to display two values:
+
+- the metric on our x axis (dew point)
+- the metric on our y axis (humidity)
+
+  For both metrics, we'll want to define a string formatter using `d3.format()`. Then we'll use that formatter to set the text value of the relevant `<span/>` in our tooltip.
+
+```js
+function onMouseEnter(event, d) {
+  const formatHumidity = d3.format(".2f");
+  tooltip.select("#humidity").text(formatHumidity(yAccessor(d)));
+
+  const formatDewPoint = d3.format(".2f");
+  tooltip.select("#dew-point").text(formatDewPoint(xAccessor(d)));
+}
+```
+
+Let's add an extra bit of information at the bottom of this function — users will probably want to know the date of the hovered point. Our data point's date is formatted as a string, but not in a very human-readable format (for example, "2019-01-01"). Let's use `d3.timeParse` to turn that string into a date that we can re-format.
+
+```js
+const dateParser = d3.timeParse("%Y-%m-%d");
+console.log(dateParser(d.date));
+```
+
+Now we need to turn our date object into a friendlier string. The d3-time-format module can help us out. `d3.timeFormat()` will take a date formatter string and return a formatter function.
+
+The date formatter string uses the same syntax as d3.timeParse — it follows four rules:
+
+1. it will return the string verbatim, other than specific directives,
+1. these directives contain a percent sign and a letter,
+1. usually the letter in a directive has two formats: lowercase (abbreviated) and uppercase (full), and
+1. a dash (-) between the percent sign and the letter prevents padding of numbers.
+
+For example, `d3.timeFormat("%Y")(new Date())` will return the current year.
+
+A few handy directives:
+
+- %Y: the full year
+- %y: the last two digits of the year
+- %m: the padded month (eg. "01")
+- %-m: the non-padded month (eg. "1")
+- %B: the full month name
+- %b: the abbreviated month name
+- %A: the full weekday name
+- %a: the abbreviated weekday name
+- %d: the day of the month
+
+See the full list of directives at https://github.com/d3/d3-time-format.
+
+Create a formatter string that prints out a friendly date.
+
+```js
+const dateParser = d3.timeParse("%Y-%m-%d");
+const formatDate = d3.timeFormat("%B %A %-d, %Y");
+console.log(formatDate(dateParser(d.date)));
+```
+
+Feed that in to our tooltip:
+
+```js
+const dateParser = d3.timeParse("%Y-%m-%d");
+const formatDate = d3.timeFormat("%B %A %-d, %Y");
+tooltip.select("#date").text(formatDate(dateParser(d.date)));
+```
+
+Next, we'll grab the x and y value of our dot , offset by the top and left margins:
+
+```js
+const x = xScale(xAccessor(d)) + dimensions.margin.left;
+const y = yScale(yAccessor(d)) + dimensions.margin.top;
+```
+
+We'll use CSS's `calc()` to add these values to the percentage offsets needed to shift the tooltip. This is necessary so that we're positioning its arrow, not the top left corner.
+
+```js
+tooltip.style(
+  "transform",
+  `translate( calc( -50% + ${x}px), calc(-100% + ${y}px) )`
+);
+```
+
+<!--
+tooltip.style(
+  "transform",
+  `translate( calc( -50% + ${x}px), calc(-100% + ${y}px))`
+);
+-->
+
+The dots are hard to hover over, though. The small hover target makes us focus really hard to move our mouse exactly over a point. To make things worse, our tooltip disappears when moving between points, making the whole interaction a little jerky.
+
+## Voronoi
+
+Let's talk briefly about [voronoi diagrams](https://en.wikipedia.org/wiki/Voronoi_diagram). For every location on our scatter plot, there is a dot that is the closest. A voronoi diagram partitions a plane into regions based on the closest point. Any location within each of these parts agrees on the closest point.
+
+Voronoi are useful in many fields — from creating art to detecting neuromuscular diseases to developing predictive models for forest fires.
+
+There is a voronoi generator built into the main d3 bundle: `d3-delaunay`.
+
+Let's add some code at the end of the Draw data step, right before the Draw peripherals step. Instead of creating a voronoi generator, we'll create a new Delaunay triangulation. A [delaunay triangulation](https://en.wikipedia.org/wiki/Delaunay_triangulation) is a way to join a set of points to create a triangular mesh. To create this, we can pass `d3.Delaunay.from()` three parameters:
+
+1. our dataset,
+1. an x accessor function, and
+1. a y accessor function.
+
+```js
+const delaunay = d3.Delaunay.from(
+  dataset,
+  (d) => xScale(xAccessor(d)),
+  (d) => yScale(yAccessor(d))
+);
+```
+
+Now we want to turn our delaunay triangulation into a voronoi diagram - our triangulation has a `.voronoi()` method.
+
+`const voronoi = delaunay.voronoi()`
+
+Let's bind our data and add a `<path>` for each of our data points with a class of "voronoi" (for styling with our CSS).
+
+```js
+bounds
+  .selectAll(".voronoi")
+  .data(dataset)
+  .join("path")
+  .attr("class", "voronoi");
+```
+
+We can create each path's d attribute string by passing voronoi.renderCell() the index of our data point.
+
+```js
+bounds
+  .selectAll(".voronoi")
+  // ...
+  .attr("d", (d, i) => voronoi.renderCell(i));
+```
+
+Give our paths a stroke value of salmon so that we can look at them.
+
+`.attr("stroke", "salmon")`
+
+`.attr("fill", "transparent")`
+
+Our voronoi diagram is wider and shorter than our chart. This is because it has no concept of the size of our bounds, and is using the default size of 960 pixels wide and 500 pixels tall.
+
+Specify the size of our diagram by setting our voronoi's `.xmax` and `.ymax` values (before we draw our `<path>`s).
+
+```js
+const voronoi = delaunay.voronoi();
+voronoi.xmax = dimensions.boundedWidth;
+voronoi.ymax = dimensions.boundedHeight;
+```
+
+We want to capture hover events for our paths instead of an individual dot. This will be much easier to interact with because of the contiguous, large hover targets.
+
+> Note that the mouse events on our dots won't be triggered anymore, since they're covered by our voronoi paths.
+
+Remove the last line where we set the stroke (.attr("stroke", "salmon")) so our voronoi cells are invisible. Next, we'll update our interactions, starting by moving our mouseenter and mouseleave events from the dots to our voronoi paths.
+
+```js
+bounds
+  .selectAll(".voronoi")
+  // ...
+  .on("mouseenter", onMouseEnter)
+  .on("mouseleave", onMouseLeave);
+```
+
+Notice how much easier it is to target a specific dot.
+
+## Changing the hovered dot's color
+
+Now that we don't need to directly hover over a dot, it can be a bit unclear which dot we're getting data about. Let's make our dot change color and grow on hover.
+
+The naive approach would involve selecting the corresponding circle and changing its fill. Note that d3 selection objects have a `.filter()` method that mimics a native Array's.
+
+```js
+function onMouseEnter(event, d) {
+  bounds.selectAll("circle")
+    .filter(datum => datum == d)
+    .style("fill", "maroon")
+```
+
+However, we'll run into an issue here. Remember that SVG elements' z-index is determined by their position in the DOM. We can't change our dots' order easily on hover, so any dot drawn after our hovered dot will obscure it. Instead, we'll draw a completely new dot which will appear on top.
+
+```js
+const tooltip = d3.select("#tooltip")
+  function onMouseEnter(event, d) {
+    const dayDot = bounds.append("circle")
+     .attr("class", "tooltipDot")
+     .attr("cx", xScale(xAccessor(d)))
+     .attr("cy", yScale(yAccessor(d)))
+     .attr("r", 7)
+     .style("fill", "maroon")
+     .style("pointer-events", "none")
+```
+
+Remember to remove this new dot on mouse leave.
+
+```js
+function onMouseLeave() {
+  d3.selectAll(".tooltipDot")
+    .remove()
+```
+
+Making a tooltip for our scatter plot was tricky, but we saw how important encouraging interaction can be. When our hover targets were small, it felt like work to get more information about a specific point. But now that we're using voronoi cells, interacting with our chart is natural.
