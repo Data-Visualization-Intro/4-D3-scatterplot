@@ -11,6 +11,8 @@ We expect them to be correlated — high humidity should cause a higher dew poin
 
 Here is the [chart](https://dataviz-exercises.netlify.app/dew-point/index.html) we are going to build.
 
+Here is the [final with interactivity](https://dataviz-exercises.netlify.app/dew-point-interactive/index.html).
+
 ## Deciding the Chart Type
 
 When looking at the relationship between two metrics, a scatterplot is a good choice.
@@ -826,6 +828,8 @@ Refresh to see our finished scatter plot with dots of various blues.
 ## Tooltip
 
 Let's add tooltips to our scatter plot. We want a tooltip to give us more information when we hover over a point in our chart.
+
+Here is the [final with tooltips](https://dataviz-exercises.netlify.app/dew-point-interactive/index.html).
 
 Note that the HTML for the tooltip is placed inside the wrapper:
 
