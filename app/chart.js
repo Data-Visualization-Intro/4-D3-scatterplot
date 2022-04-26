@@ -5,6 +5,7 @@ async function drawScatter() {
   const xAccessor = (d) => d.dewPoint;
   const yAccessor = (d) => d.humidity;
 
+  // 2. create chart dimensions
   const width = d3.min([window.innerWidth * 0.9, window.innerHeight * 0.9]);
 
   let dimensions = {
@@ -23,6 +24,7 @@ async function drawScatter() {
   dimensions.boundedHeight =
     dimensions.height - dimensions.margin.top - dimensions.margin.bottom;
 
+  // 3. draw canvas
   const wrapper = d3
     .select("#wrapper")
     .append("svg")
@@ -36,6 +38,7 @@ async function drawScatter() {
       `translate(${dimensions.margin.left}px, ${dimensions.margin.top}px)`
     );
 
+  // 4. create scales
   const xScale = d3
     .scaleLinear()
     .domain(d3.extent(dataset, xAccessor))
@@ -48,25 +51,44 @@ async function drawScatter() {
     .range([dimensions.boundedHeight, 0])
     .nice();
 
-  const dots = bounds
-    .selectAll("circle")
-    .data(dataset)
-    .enter()
-    .append("circle");
-  console.log(dots);
+  // 5. draw data
 
-  //   bounds
-  //     .append("circle")
-  //     .attr("cx", dimensions.boundedWidth / 2)
-  //     .attr("cy", dimensions.boundedHeight / 2)
-  //     .attr("r", 5);
+  const dots = bounds.selectAll("circle").data(dataset);
 
-  //   dataset.forEach((d) => {
-  //     bounds
-  //       .append("circle")
-  //       .attr("cx", xScale(xAccessor(d)))
-  //       .attr("cy", yScale(yAccessor(d)))
-  //       .attr("r", 5);
-  //   });
+  dots
+    .join("circle")
+    .attr("cx", (d) => xScale(xAccessor(d)))
+    .attr("cy", (d) => yScale(yAccessor(d)))
+    .attr("r", 5)
+    .attr("fill", "cornflowerblue");
+
+  // 6. draw peripherals
+  const xAxisGenerator = d3.axisBottom().scale(xScale);
+  const xAxis = bounds
+    .append("g")
+    .call(xAxisGenerator)
+    .style("transform", `translateY(${dimensions.boundedHeight}px)`);
+
+  const xAxisLabel = xAxis
+    .append("text")
+    .attr("x", dimensions.boundedWidth / 2)
+    .attr("y", dimensions.margin.bottom - 10)
+    .attr("fill", "black")
+    .style("font-size", "1.4em")
+    .html("Dew point (&deg;F)");
+
+  const yAxisGenerator = d3.axisLeft().scale(yScale).ticks(8);
+  const yAxis = bounds.append("g").call(yAxisGenerator);
+
+  const yAxisLabel = yAxis
+    .append("text")
+    .attr("x", -dimensions.boundedHeight / 2)
+    .attr("y", -dimensions.margin.left + 10)
+    .attr("fill", "black")
+    .style("font-size", "1.4em")
+    .text("Relative humidity")
+    .style("transform", "rotate(-90deg)")
+    .style("text-anchor", "middle");
 }
+
 drawScatter();
