@@ -830,7 +830,7 @@ Let's add tooltips to our scatter plot. We want a tooltip to give us more inform
 Note that the HTML for the tooltip is placed inside the wrapper:
 
 ```html
-<div id="wrapper">
+<div id="wrapper" class="wrapper">
   <div id="tooltip" class="tooltip">
     <div class="tooltip-date">
       <span id="date"></span>
