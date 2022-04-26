@@ -240,6 +240,10 @@ This is the "inner" part of our chart that we will use for our data elements.
 
 Before we draw our data, we have to figure out how to convert numbers from the data domain to the pixel domain.
 
+i.e.:
+
+`var linearScale = d3.scaleLinear().domain([0, 100]).range([0, 600])`
+
 Let's start with the x axis. We want to determine the horizontal position of each day's dot based on its dew point.
 
 To find this position we use a d3 scale object, which helps us map our data to pixels. Let's create a scale that will take a dew point and tell us how far to the right a dot needs to be.
