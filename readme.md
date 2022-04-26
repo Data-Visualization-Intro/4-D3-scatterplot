@@ -1,5 +1,23 @@
 # D3 - Scatterplot Chart
 
+- [D3 - Scatterplot Chart](#d3---scatterplot-chart)
+  - [Deciding the Chart Type](#deciding-the-chart-type)
+  - [Steps in Drawing Any Chart](#steps-in-drawing-any-chart)
+  - [Step One: Access Data](#step-one-access-data)
+  - [Step Two: Create Chart Dimensions](#step-two-create-chart-dimensions)
+  - [Step Three: Draw Canvas](#step-three-draw-canvas)
+  - [Step Four: Create Scales](#step-four-create-scales)
+    - [The concept behind scales](#the-concept-behind-scales)
+    - [Finding the extents](#finding-the-extents)
+  - [Step Five: Draw Data](#step-five-draw-data)
+    - [Data joins](#data-joins)
+    - [Visualizing data joins](#visualizing-data-joins)
+  - [Step Six: Draw Peripherals](#step-six-draw-peripherals)
+  - [Adding Color](#adding-color)
+  - [Step Seven: Interactions (Tooltip)](#step-seven-interactions-tooltip)
+  - [Voronoi](#voronoi)
+  - [Changing the hovered dot's color](#changing-the-hovered-dots-color)
+
 Let's create another chart that's a little more complex.
 
 There are many questions we could ask our weather dataset about the relationship between different metrics. Let's investigate these two metrics:
@@ -261,7 +279,7 @@ Recall, we need to tell our scale:
 
 Pretend that the temperatures in our dataset range from 0 to 100 degrees.
 
-In this case, converting from temperature to pixels is easy: a temperature of 50 degrees maps to 50 pixels because both range and domain are [0,100].
+In this case, converting from temperature to pixels is easy: a temperature of 50 degrees maps to 50 pixels because both range and domain are [0, 100].
 
 But the relationship between our data and the pixel output is rarely so simple. What if our chart was 200 pixels wide? What if we have to handle negative temperatures?
 
@@ -280,6 +298,7 @@ We'll pass `d3.extent()` our dataset and our `xAccessor()` function and get the 
 
 ```js
 const xScale = d3.scaleLinear().domain(d3.extent(dataset, xAccessor));
+console.log(d3.extent(dataset, xAccessor));
 console.log(xScale.domain());
 ```
 
@@ -312,6 +331,10 @@ const xScale = d3
   .domain(d3.extent(dataset, xAccessor))
   .range([0, dimensions.boundedWidth])
   .nice();
+
+console.log(d3.extent(dataset, xAccessor));
+console.log(xScale.domain());
+console.log(xScale.range());
 ```
 
 Creating our y scale will be very similar to creating our x scale. The only differences are:
@@ -527,11 +550,6 @@ const dots = bounds.selectAll("circle").data(dataset).enter().append("circle");
 When we load our webpage we still have a blank page. However, we will be able to see 365 new empty `<circle>` elements in our bounds in the browser's Elements panel.
 
 Set the position and size of the new entering circles using `.enter()`
-
-```js
-const dots = bounds.selectAll("circle").data(dataset).enter();
-console.log(dots);
-```
 
 ```js
 const dots = bounds
@@ -787,7 +805,6 @@ const yAxisLabel = yAxis
   .text("Relative humidity")
   .style("transform", "rotate(-90deg)")
   .style("text-anchor", "middle");
-}
 ```
 
 ## Adding Color
@@ -829,7 +846,7 @@ Refresh to see our finished scatter plot with dots of various blues.
 
 > For a complete, accessible chart, it would be a good idea to add a legend to explain what our colors mean. We'll return to this later.
 
-## Tooltip
+## Step Seven: Interactions (Tooltip)
 
 Let's add tooltips to our scatter plot. We want a tooltip to give us more information when we hover over a point in our chart.
 
@@ -1018,12 +1035,16 @@ tooltip.style(
 );
 ```
 
-<!--
-tooltip.style(
-  "transform",
-  `translate( calc( -50% + ${x}px), calc(-100% + ${y}px))`
-);
--->
+Lastly, we'll make our tooltip visible and hide it when we mouse out of our dot.
+
+```js
+  tooltip.style("opacity", 1)
+}
+
+function onMouseLeave() {
+  tooltip.style("opacity", 0)
+}
+```
 
 The dots are hard to hover over, though. The small hover target makes us focus really hard to move our mouse exactly over a point. To make things worse, our tooltip disappears when moving between points, making the whole interaction a little jerky.
 
@@ -1063,7 +1084,7 @@ bounds
   .attr("class", "voronoi");
 ```
 
-We can create each path's d attribute string by passing voronoi.renderCell() the index of our data point.
+We can create each path's `d` attribute string by passing `voronoi.renderCell()` the index of our data point.
 
 ```js
 bounds
@@ -1074,9 +1095,10 @@ bounds
 
 Give our paths a stroke value of salmon so that we can look at them.
 
-`.attr("stroke", "salmon")`
-
-`.attr("fill", "transparent")`
+```js
+.attr("stroke", "salmon")
+.attr("fill", "transparent")
+```
 
 Our voronoi diagram is wider and shorter than our chart. This is because it has no concept of the size of our bounds, and is using the default size of 960 pixels wide and 500 pixels tall.
 
@@ -1092,17 +1114,20 @@ We want to capture hover events for our paths instead of an individual dot. This
 
 > Note that the mouse events on our dots won't be triggered anymore, since they're covered by our voronoi paths.
 
-Remove the last line where we set the stroke (.attr("stroke", "salmon")) so our voronoi cells are invisible. Next, we'll update our interactions, starting by moving our mouseenter and mouseleave events from the dots to our voronoi paths.
+Remove the last line where we set the stroke (.attr("stroke", "salmon")) so our voronoi cells are invisible. Next, we'll update our interactions, starting by _moving our mouseenter and mouseleave events from the dots to our voronoi paths_.
 
 ```js
 bounds
   .selectAll(".voronoi")
-  // ...
+  .data(dataset)
+  .join("path")
+  .attr("class", "voronoi")
+  .attr("d", (d, i) => voronoi.renderCell(i))
+  .attr("stroke", "salmon")
+  .attr("fill", "transparent")
   .on("mouseenter", onMouseEnter)
   .on("mouseleave", onMouseLeave);
 ```
-
-Notice how much easier it is to target a specific dot.
 
 ## Changing the hovered dot's color
 
@@ -1121,6 +1146,7 @@ However, we'll run into an issue here. Remember that SVG elements' z-index is de
 
 ```js
 const tooltip = d3.select("#tooltip")
+
   function onMouseEnter(event, d) {
     const dayDot = bounds.append("circle")
      .attr("class", "tooltipDot")
@@ -1131,12 +1157,48 @@ const tooltip = d3.select("#tooltip")
      .style("pointer-events", "none")
 ```
 
+i.e.:
+
+```js
+function onMouseEnter(event, d) {
+  const dayDot = bounds
+    .append("circle")
+    .attr("class", "tooltipDot")
+    .attr("cx", xScale(xAccessor(d)))
+    .attr("cy", yScale(yAccessor(d)))
+    .attr("r", 7)
+    .style("fill", "maroon")
+    .style("pointer-events", "none");
+
+  tooltip.style("opacity", 1);
+
+  const formatHumidity = d3.format(".2f");
+  tooltip.select("#humidity").text(formatHumidity(yAccessor(d)));
+
+  const formatDewPoint = d3.format(".2f");
+  tooltip.select("#dew-point").text(formatDewPoint(xAccessor(d)));
+
+  const dateParser = d3.timeParse("%Y-%m-%d");
+  const formatDate = d3.timeFormat("%B %A %-d, %Y");
+  tooltip.select("#date").text(formatDate(dateParser(d.date)));
+
+  const x = xScale(xAccessor(d)) + dimensions.margin.left;
+  const y = yScale(yAccessor(d)) + dimensions.margin.top;
+
+  tooltip.style(
+    "transform",
+    `translate( calc( -50% + ${x}px), calc(-100% + ${y}px) )`
+  );
+}
+```
+
 Remember to remove this new dot on mouse leave.
 
 ```js
 function onMouseLeave() {
-  d3.selectAll(".tooltipDot")
-    .remove()
+  // tooltip.style("opacity", 0);
+  d3.selectAll(".tooltipDot").remove();
+}
 ```
 
-Making a tooltip for our scatter plot was tricky, but we saw how important encouraging interaction can be. When our hover targets were small, it felt like work to get more information about a specific point. But now that we're using voronoi cells, interacting with our chart is natural.
+Making a tooltip for our scatter plot was tricky, but we can see how important encouraging interaction can be. When our hover targets were small, it felt like work to get more information about a specific point. But now that we're using voronoi cells, interacting with our chart is natural.
