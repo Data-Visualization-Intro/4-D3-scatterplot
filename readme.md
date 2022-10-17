@@ -11,16 +11,13 @@
     - [Finding the extents](#finding-the-extents)
   - [Step Five: Draw Data](#step-five-draw-data)
     - [Data joins](#data-joins)
-    - [Visualizing data joins](#visualizing-data-joins)
   - [Step Six: Draw Peripherals](#step-six-draw-peripherals)
   - [Adding Color](#adding-color)
   - [Step Seven: Interactions (Tooltip)](#step-seven-interactions-tooltip)
   - [Voronoi](#voronoi)
   - [Changing the hovered dot's color](#changing-the-hovered-dots-color)
 
-Let's create another chart that's a little more complex.
-
-There are many questions we could ask our weather dataset about the relationship between different metrics. Let's investigate these two metrics:
+We will use the weather dataset to display the relationship between dew point and humidity:
 
 - dew point - the highest temperature (°F) at which dew droplets form
 - humidity - the amount of water vapor in the air
@@ -29,7 +26,7 @@ We expect them to be correlated — high humidity should cause a higher dew poin
 
 Here is the [chart](https://dataviz-exercises.netlify.app/dew-point/index.html) we are going to build.
 
-Here is the [final with interactivity](https://dataviz-exercises.netlify.app/dew-point-interactive/index.html).
+Here is the [chart with interactivity and a normally hidden overlay](https://dataviz-exercises.netlify.app/dew-point-interactive/index.html).
 
 ## Deciding the Chart Type
 
@@ -40,23 +37,27 @@ A scatterplot includes two axes:
 - an x axis that displays one metric and
 - a y axis that displays the other
 
-We'll plot each data point (in this case, a single day) as a dot. If we wanted to involve a third metric, we could even add another dimension by changing the color or the size of each dot.
+We'll plot each data point (in this case, a single day) as a dot.
+
+If we wanted to involve a third metric, we could add another dimension by changing the color or the size of each dot.
 
 ## Steps in Drawing Any Chart
 
-Let's solidify our foundation by splitting our chart-creating code into seven general steps.
+In the previous section (line chart) we performed tasks in a specific order.
+
+Let's solidify our foundation by explicitly splitting our chart-creating code into seven general steps:
 
 1. Access data - look at the data structure and declare how to access the values we'll need
-1. Create chart dimensions - declare the physical (i.e. pixels) chart parameters
-1. Draw canvas - render the chart area and bounds element
-1. Create scales - create scales for every data-to-physical attribute in our chart
-1. Draw data - render your data elements
-1. Draw peripherals - render your axes, labels, and legends
-1. Set up interactions - initialize event listeners and create interaction behavior
+2. Create chart dimensions - declare the physical (i.e. pixels) chart parameters
+3. Draw canvas - render the chart area and bounds element
+4. Create scales - create scales for every data-to-physical attribute in our chart
+5. Draw data - render your data elements
+6. Draw peripherals - render your axes, labels, and legends
+7. Set up interactions - initialize event listeners and create interaction behavior
 
 ## Step One: Access Data
 
-As we saw, this step will be quick! We can utilize d3.json() to grab the my_weather_data.json file.
+We can utilize d3.json() to load the `my_weather_data.json` file.
 
 ```js
 async function drawScatter() {
@@ -65,23 +66,24 @@ async function drawScatter() {
 drawScatter();
 ```
 
-The next part is to create our accessor functions. Let's log the first data point to the console to look at the available keys.
+Next we create our accessor functions. Let's log the first data point to the console to examine the available keys.
 
 ```js
 const dataset = await d3.json("./data/my_weather_data.json");
 console.table(dataset[0]);
 ```
 
-We can see the metrics we're interested in as humidity and dewPoint. Let's use those to define our accessor functions.
+We can see the metrics we're interested in: humidity and dewPoint. Let's use those to define our accessor functions.
 
 ```js
 const xAccessor = (d) => d.dewPoint;
 const yAccessor = (d) => d.humidity;
-console.log(data[0]);
-console.log(xAccessor(data[0]));
+console.table(dataset[0]);
+console.log(xAccessor(dataset[0]));
+console.log(yAccessor(dataset[0]));
 ```
 
-Code:
+Code so far:
 
 ```js
 async function drawScatter() {
@@ -98,7 +100,7 @@ drawScatter();
 
 We'll create a square chart that fits within any browser window.
 
-Typically, scatterplots are square, with the x axis as wide as the y axis is tall. This makes it easier to look at the overall shape of the data points once they're plotted by not stretching or squashing one of the scales.
+Typically, scatterplots are square, with the x axis as wide as the y axis is tall. This makes it easier to look at the overall shape of the data points since they're not plotted by stretching or squashing one of the scales.
 
 We want the height to be the same as the width. We could use the same width we used previously (`window.innerWidth * 0.9`), but then the chart might extend down the page, out of view on horizontal screens.
 
@@ -106,18 +108,20 @@ Ideally, the chart will be as large as possible while still fitting on our scree
 
 To fix this problem, we want to use either the height or the width of the window, whichever one is smaller. And because we want to leave a little bit of whitespace around the chart, we'll multiply the value by 0.9 (90% of the total width or height).
 
-`d3-array` can help us out here with the `d3.min` method. `d3.min` takes two arguments:
+`d3-array` can help us out here with the `d3.min` method. [d3.min](https://observablehq.com/@d3/d3-extent) takes two arguments:
 
 1. an array of data points
-1. an accessor function to grab the value from each data point
+2. an accessor function to grab the value from each data point
 
-In this case we won't need to specify the second parameter because it defaults to an identity function and returns the value.
+<!-- In this case we won't need to specify the second parameter because it defaults to an identity function and returns the value. -->
+
+In this case we won't need to specify the second parameter because it returns the value by default.
 
 ```js
 const width = d3.min([window.innerWidth * 0.9, window.innerHeight * 0.9]);
 ```
 
-> There is a native browser method (`Math.min`) that will also find the lowest number. There are a few benefits to `d3.min`:
+> There is a native browser method ([Math.min](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Math/min)) that will also find the lowest number. There are a few benefits to `d3.min`:
 
 ```js
 const width = d3.min([window.innerWidth * 0.9, window.innerHeight * 0.9]);
@@ -132,9 +136,9 @@ console.log({
 - `Math.min` will return NaN if there is a value in the array that is undefined or can't be converted into a number, whereas d3.min will ignore it
 - `d3.min` will prevent the need to create another array of values if we need to use an accessor function
 - `Math.min` will return Infinity if the dataset is empty, whereas d3.min will return undefined
-- `Math.min` uses numeric order, whereas d3.min uses natural order, which allows it to handle strings. Make sure to convert your values to numbers beforehand
+- `Math.min` uses numeric order, whereas d3.min uses natural order, which allows it to handle strings.
 
-D3.min also allows an accessor function:
+D3.min also allows an [accessor function](https://observablehq.com/@d3/d3-extent#flights):
 
 ```js
 const width = d3.min([window.innerWidth * 0.9, window.innerHeight * 0.9]);
@@ -150,7 +154,6 @@ So we could get the smallest x value from our dataset:
 ```js
 console.log({
   d3: d3.min(dataset, xAccessor),
-  Math: Math.min(...arr),
 });
 ```
 
@@ -250,9 +253,9 @@ const bounds = wrapper
   );
 ```
 
-Above we create a group element and use the transform CSS property to move it to the right and down (note that the left margin pushes our bounds to the right, and a top margin pushes our bounds down).
+We created a group element and used the transform CSS property to move it to the right and down (the left margin pushes our bounds to the right, the top margin pushes our bounds down).
 
-This is the "inner" part of our chart that we will use for our data elements.
+This is the inner part of our chart that we will use for our data elements.
 
 ## Step Four: Create Scales
 
@@ -262,9 +265,9 @@ i.e.:
 
 `var linearScale = d3.scaleLinear().domain([0, 100]).range([0, 600])`
 
-Let's start with the x axis. We want to determine the horizontal position of each day's dot based on its dew point.
+Let's start with the x axis - dew point. We want to determine the horizontal position of each day's dot based on its dew point.
 
-To find this position we use a d3 scale object, which helps us map our data to pixels. Let's create a scale that will take a dew point and tell us how far to the right a dot needs to be.
+To find this position we use a d3 scale which maps our data to pixels. Let's create a scale that will take a dew point and tell us how far to the right a dot needs to be.
 
 This will be a linear scale because the input (dew point) and the output (pixels) will be numbers that increase linearly.
 
@@ -274,8 +277,8 @@ This will be a linear scale because the input (dew point) and the output (pixels
 
 Recall, we need to tell our scale:
 
-- what inputs it will need to handle (domain), and
-- what outputs we want back (range).
+- what inputs it will need to handle (the domain), and
+- what outputs we want back (the range).
 
 Pretend that the temperatures in our dataset range from 0 to 100 degrees.
 
@@ -467,176 +470,7 @@ D3 has functions that will help us address these issues and keep our code clean.
 
 Delete the last `forEach` block of code.
 
-We'll start off by grabbing all `<circle>` elements in a d3 selection object. Instead of using d3.selection's `.select()` method, which returns one matching element, we'll use its `.selectAll()` method, which returns an array of matching elements.
-
-`const dots = bounds.selectAll("circle")`
-
-This will seem strange at first — we don't have any dots yet, why would we select something that doesn't exist? Don't worry. You'll soon become comfortable with this pattern.
-
-By using `const dots = bounds.selectAll("circle")` we're creating a d3 selection that is _aware of what elements already exist_. If we had already drawn part of our dataset, this selection would be aware of what dots were already drawn, and which need to be added.
-
 ```js
-const dots = bounds.selectAll("circle");
-console.log(dots);
-```
-
-This returns an empty array for `_groups`.
-
-To tell the selection what our data look like, we'll pass our dataset to the selection's `.data()` method.
-
-```js
-const dots = bounds.selectAll("circle").data(dataset);
-console.log(dots);
-```
-
-Once we pass the data in we log new items in the `select`: `enter` and `exit`.
-
-When we call `.data()` on our selection, we're joining our selected elements with our array of data points.
-
-The returned selection will have:
-
-1. a list of existing elements
-1. new elements that need to be added
-1. old elements that need to be removed
-
-We'll see these changes to our selection object in three ways:
-
-- our selection object is updated to contain any overlap between existing DOM elements and data points
-- an `_enter` key is added that lists any data points that don't already have an element rendered (365 here)
-- an `_exit` key is added that lists any data points that are already rendered but aren't in the provided dataset (0 here)
-
-![venn diagram](samples/venn.png)
-
-Let's get an idea of what that updated selection object looks like by logging it to the console.
-
-```js
-let dots = bounds.selectAll("circle");
-console.log(dots);
-dots = dots.data(dataset);
-console.log(dots);
-```
-
-Recall that the currently selected DOM elements are located under the `_groups` key. Before we join our dataset to our selection, the selection just contains an empty array. That makes sense - there are no circles in bounds yet.
-
-(View the results of the first `console.log(dots)`.)
-
-However, the next selection object looks different. We have two new keys: `_enter` and `_exit`, and our `_groups` array has an array with 365 elements — the number of data points in our dataset.
-
-(View the results of the second `console.log(dots);`.)
-
-Take a closer look at the `_enter` key. If we expand the array and look at one of the values, we can see an object with a `__data__` property.
-
-> The namespaceURI key tells the browser that the element is a SVG element and needs to be created in the "http://www.w3.org/2000/svg" namespace (SVG).
-
-If we expand the `__data__` value, we will see one of our data points.
-
-We can see that each value in `_enter` corresponds to a value in our dataset. This is what we would expect, since all of the data points need to be added to the DOM.
-
-The `_exit` value is an empty array — if we were removing existing elements, we would see those listed here.
-
-In order to act on the new elements we can create a d3 selection object containing just those elements with the `enter` method. There is a matching method (exit) for old elements that we'll need when we look at transitions between data sets.
-
-```js
-const dots = bounds.selectAll("circle").data(dataset).enter();
-console.log(dots);
-```
-
-This looks just like any d3 selection object we've manipulated before. Let's append one `<circle>` for each data point. We can use the same `.append()` method we've been using for single-node selection objects and d3 will create one element for each data point.
-
-```js
-const dots = bounds.selectAll("circle").data(dataset).enter().append("circle");
-```
-
-When we load our webpage we still have a blank page. However, we will be able to see 365 new empty `<circle>` elements in our bounds in the browser's Elements panel.
-
-Set the position and size of the new entering circles using `.enter()`
-
-```js
-const dots = bounds
-  .selectAll("circle")
-  .data(dataset)
-  .enter()
-  .append("circle")
-  .attr("cx", (d) => xScale(xAccessor(d)))
-  .attr("cy", (d) => yScale(yAccessor(d)))
-  .attr("r", 5);
-```
-
-We can write the same code we would write for a single-node selection object. Any attribute values that are functions will be passed each data point individually. This helps keep our code concise and consistent.
-
-Make these dots a lighter color to help them stand out:
-
-`.attr("fill", "cornflowerblue")`
-
-### Visualizing data joins
-
-Here's a quick example to help visualize the data join concept. We're going to split the dataset in two and draw both parts separately. Temporarily edit out your finished dots code so we have a clear slate to work with. We'll revert back to it when we're done with this mini exercise.
-
-Let's add a function called `drawDots()` that mimics our dot drawing code. This function will select all existing circles, join them with a provided dataset, and draw any new circles with a provided color.
-
-```js
-  // 5. Draw data
-  const drawDots = (dataset, color) => {
-    const dots = bounds
-      .selectAll("circle")
-      .data(dataset)
-      .enter()
-      .append("circle")
-      .attr("cx", (d) => xScale(xAccessor(d)))
-      .attr("cy", (d) => yScale(yAccessor(d)))
-      .attr("r", 5)
-      .attr("fill", color);
-  };
-  drawDots(dataset.slice(0, 100), "gray");
-}
-drawScatter();
-```
-
-Then, add some logging and another slice after one second:
-
-```js
-  // 5. Draw data
-  const drawDots = (dataset, color) => {
-    const dots = bounds.selectAll("circle").data(dataset);
-
-    console.log(dots);
-
-    dots
-      .enter()
-      .append("circle")
-      .attr("cx", (d) => xScale(xAccessor(d)))
-      .attr("cy", (d) => yScale(yAccessor(d)))
-      .attr("r", 5)
-      .attr("fill", color);
-  };
-  drawDots(dataset.slice(0, 100), "gray");
-  setTimeout(() => {
-    drawDots(dataset, "cornflowerblue");
-  }, 1000);
-}
-drawScatter();
-```
-
-In the log we can see the exit array (the old or previously created dots) has a length of 100. These dots were not recreated.
-
-Clean up the code to reset it back to:
-
-```js
-const dots = bounds
-  .selectAll("circle")
-  .data(dataset)
-  .enter()
-  .append("circle")
-  .attr("cx", (d) => xScale(xAccessor(d)))
-  .attr("cy", (d) => yScale(yAccessor(d)))
-  .attr("r", 5)
-  .attr("fill", "cornflowerblue");
-```
-
-> So many people found `.enter()` etc. to be confusing that d3's maintainers added `.join()` as an easier alternative. However, it is good to start building an understanding of `._enter()` etc. in order to understand what's going on under the hood.
-
-```js
-  // 5. Draw data
   const dots = bounds.selectAll("circle").data(dataset);
 
   dots
@@ -781,7 +615,7 @@ Use our generator to draw our y axis:
 const yAxis = bounds.append("g").call(yAxisGenerator);
 ```
 
-To finish up, let's draw the y axis label in the middle of the y axis, just inside the left side of the chart wrapper. d3 selection objects have a `.text()` method that operates similarly to `.html()`:
+To finish up, let's center the y axis label on the y axis, just inside the left side of the chart wrapper. d3 selection objects have a `.text()` method that operates similarly to `.html()`:
 
 ```js
 const yAxisLabel = yAxis
@@ -817,7 +651,9 @@ Let's bring in the amount of cloud cover for each day to see if there's a correl
 
 Looking at a value in our dataset, we can see that the amount of cloud cover exists at the key `cloudCover`. Let's add another data accessor function near the top of our file:
 
-`const colorAccessor = d => d.cloudCover`
+```js
+const colorAccessor = (d) => d.cloudCover;
+```
 
 Create another scale after our scales.
 
@@ -840,11 +676,13 @@ Update how we set the fill of each dot. Here's where we're doing that now:
 
 Instead of making every dot blue, let's use our `colorAccessor()` to grab the precipitation value, then pass that into our `colorScale()`:
 
-`.attr("fill", d => colorScale(colorAccessor(d)))`
+```js
+.attr("fill", d => colorScale(colorAccessor(d)))
+```
 
 Refresh to see our finished scatter plot with dots of various blues.
 
-> For a complete, accessible chart, it would be a good idea to add a legend to explain what our colors mean. We'll return to this later.
+> It would be a good idea to add a legend to explain what the colors signify. We'll return to this later.
 
 ## Step Seven: Interactions (Tooltip)
 
@@ -950,8 +788,13 @@ We know that we'll need to modify our `#tooltip` element, so let's assign that t
 
 ```js
 const tooltip = d3.select("#tooltip");
-function onMouseEnter(event, d) {}
-function onMouseLeave() {}
+
+function onMouseEnter(event, d) {
+  console.log("enter");
+}
+function onMouseLeave() {
+  console.log("leave");
+}
 ```
 
 Let's first fill out our `onMouseEnter()` function. We want to display two values:
@@ -1072,7 +915,9 @@ const delaunay = d3.Delaunay.from(
 
 Now we want to turn our delaunay triangulation into a voronoi diagram - our triangulation has a `.voronoi()` method.
 
-`const voronoi = delaunay.voronoi()`
+```js
+const voronoi = delaunay.voronoi();
+```
 
 Let's bind our data and add a `<path>` for each of our data points with a class of "voronoi" (for styling with our CSS).
 
