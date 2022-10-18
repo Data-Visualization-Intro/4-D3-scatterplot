@@ -22,7 +22,7 @@ We will use the weather dataset to display the relationship between dew point an
 - dew point - the highest temperature (°F) at which dew droplets form
 - humidity - the amount of water vapor in the air
 
-We expect them to be correlated — high humidity should cause a higher dew point temperature.
+(We expect them to be correlated — high humidity should cause a higher dew point temperature.)
 
 Here is the [chart](https://dataviz-exercises.netlify.app/dew-point/index.html) we are going to build.
 
@@ -51,8 +51,8 @@ Let's solidify our foundation by explicitly splitting our chart-creating code in
 2. Create chart dimensions - declare the physical (i.e. pixels) chart parameters
 3. Draw canvas - render the chart area and bounds element
 4. Create scales - create scales for every data-to-physical attribute in our chart
-5. Draw data - render your data elements
-6. Draw peripherals - render your axes, labels, and legends
+5. Draw data - render the data elements
+6. Draw peripherals - render the axes, labels, and legends
 7. Set up interactions - initialize event listeners and create interaction behavior
 
 ## Step One: Access Data
@@ -61,29 +61,39 @@ We can utilize d3.json() to load the `my_weather_data.json` file.
 
 ```js
 async function drawScatter() {
-  let dataset = await d3.json("./data/my_weather_data.json");
+  const dataset = await d3.json("./data/my_weather_data.json");
 }
+
 drawScatter();
 ```
 
 Next we create our accessor functions. Let's log the first data point to the console to examine the available keys.
 
 ```js
-const dataset = await d3.json("./data/my_weather_data.json");
-console.table(dataset[0]);
+async function drawScatter() {
+  const dataset = await d3.json("./data/my_weather_data.json");
+  console.table(dataset[0]);
+}
+
+drawScatter();
 ```
 
 We can see the metrics we're interested in: humidity and dewPoint. Let's use those to define our accessor functions.
 
 ```js
-const xAccessor = (d) => d.dewPoint;
-const yAccessor = (d) => d.humidity;
-console.table(dataset[0]);
-console.log(xAccessor(dataset[0]));
-console.log(yAccessor(dataset[0]));
+async function drawScatter() {
+  const dataset = await d3.json("./data/my_weather_data.json");
+  const xAccessor = (d) => d.dewPoint;
+  const yAccessor = (d) => d.humidity;
+  console.table(dataset[0]);
+  console.log(xAccessor(dataset[0]));
+  console.log(yAccessor(dataset[0]));
+}
+
+drawScatter();
 ```
 
-Code so far:
+THis complete the data aquisition. Remove the console log statements:
 
 ```js
 async function drawScatter() {
@@ -93,6 +103,7 @@ async function drawScatter() {
   const xAccessor = (d) => d.dewPoint;
   const yAccessor = (d) => d.humidity;
 }
+
 drawScatter();
 ```
 
@@ -106,7 +117,7 @@ We want the height to be the same as the width. We could use the same width we u
 
 Ideally, the chart will be as large as possible while still fitting on our screen.
 
-To fix this problem, we want to use either the height or the width of the window, whichever one is smaller. And because we want to leave a little bit of whitespace around the chart, we'll multiply the value by 0.9 (90% of the total width or height).
+To fix this problem, we want to use _either the height or the width of the window, whichever one is smaller_. And because we want to leave a little bit of space around the chart, we'll multiply the value by 0.9 (90% of the total width or height).
 
 `d3-array` can help us out here with the `d3.min` method. [d3.min](https://observablehq.com/@d3/d3-extent) takes two arguments:
 
@@ -115,7 +126,7 @@ To fix this problem, we want to use either the height or the width of the window
 
 <!-- In this case we won't need to specify the second parameter because it defaults to an identity function and returns the value. -->
 
-In this case we won't need to specify the second parameter because it returns the value by default.
+In this case we won't need to specify the second parameter because `d3.min()` returns the value by default.
 
 ```js
 const width = d3.min([window.innerWidth * 0.9, window.innerHeight * 0.9]);
@@ -134,38 +145,45 @@ console.log({
 
 - `Math.min` will count any nulls in the array as 0, whereas d3.min will ignore them
 - `Math.min` will return NaN if there is a value in the array that is undefined or can't be converted into a number, whereas d3.min will ignore it
-- `d3.min` will prevent the need to create another array of values if we need to use an accessor function
 - `Math.min` will return Infinity if the dataset is empty, whereas d3.min will return undefined
-- `Math.min` uses numeric order, whereas d3.min uses natural order, which allows it to handle strings.
-
-D3.min also allows an [accessor function](https://observablehq.com/@d3/d3-extent#flights):
+- `Math.min` uses numeric order, whereas d3.min uses natural order, which allows it to handle strings
+- `d3.min` will prevent the need to create another array of values if we need to use an [accessor function](https://observablehq.com/@d3/d3-extent#flights):
 
 ```js
 const width = d3.min([window.innerWidth * 0.9, window.innerHeight * 0.9]);
 const arr = [1, 2, 3];
 console.log({
   d3: d3.min(arr, (d) => d * 2),
-  Math: Math.min(...arr),
 });
 ```
 
-So we could get the smallest x value from our dataset:
+So we can get the smallest x value from our dataset as follows:
 
 ```js
-console.log({
-  d3: d3.min(dataset, xAccessor),
-});
+console.log(d3.min(dataset, xAccessor));
 ```
 
-You can see how `d3.min` would be preferable when creating charts, especially when using dynamic data.
+You can see how `d3.min` would be preferable when creating charts, especially when using dynamic or unpredictable data.
 
 Use the width variable to define the chart dimensions:
 
 ```js
-let dimensions = {
-  width: width,
-  height: width,
-};
+async function drawScatter() {
+  // 1. Access data
+  let dataset = await d3.json("./data/my_weather_data.json");
+
+  const xAccessor = (d) => d.dewPoint;
+  const yAccessor = (d) => d.humidity;
+
+  // 2. Create dimensions
+  const width = d3.min([window.innerWidth * 0.9, window.innerHeight * 0.9]);
+  let dimensions = {
+    width: width,
+    height: width,
+  };
+}
+
+drawScatter();
 ```
 
 We want a small top and right margin to give the chart some space. Dots near the top or right of the chart or the y axis's topmost tick label might overflow our bounds (because the position of the dot is technically the center of the dot, but the dot has a radius).
@@ -235,6 +253,7 @@ This step will look exactly like our line chart code. First, we find an existing
 Then we use `attr` to set the size of the `<svg>` to our `dimensions.width` and `dimensions.height`. Recall that these sizes are the size of the "outside" of our plot.
 
 ```js
+// 3. Draw canvas
 const wrapper = d3
   .select("#wrapper")
   .append("svg")
@@ -242,7 +261,7 @@ const wrapper = d3
   .attr("height", dimensions.height);
 ```
 
-Create our bounds and shift them to accommodate our top & left margins:
+Create our bounds and shift them to accommodate our top and left margins:
 
 ```js
 const bounds = wrapper
@@ -265,7 +284,7 @@ i.e.:
 
 `var linearScale = d3.scaleLinear().domain([0, 100]).range([0, 600])`
 
-Let's start with the x axis - dew point. We want to determine the horizontal position of each day's dot based on its dew point.
+Let's start with the x axis - the dew point. We want to determine the horizontal position of each day's dot based on its dew point.
 
 To find this position we use a d3 scale which maps our data to pixels. Let's create a scale that will take a dew point and tell us how far to the right a dot needs to be.
 
@@ -278,7 +297,7 @@ This will be a linear scale because the input (dew point) and the output (pixels
 Recall, we need to tell our scale:
 
 - what inputs it will need to handle (the domain), and
-- what outputs we want back (the range).
+- what we want to convert the domain to (the range).
 
 Pretend that the temperatures in our dataset range from 0 to 100 degrees.
 
@@ -300,9 +319,8 @@ D3 has a helper function we can use here: `d3.extent()` that takes two parameter
 We'll pass `d3.extent()` our dataset and our `xAccessor()` function and get the min and max temperatures we need to handle (in `[min, max]` format).
 
 ```js
-const xScale = d3.scaleLinear().domain(d3.extent(dataset, xAccessor));
 console.log(d3.extent(dataset, xAccessor));
-console.log(xScale.domain());
+const xScale = d3.scaleLinear().domain(d3.extent(dataset, xAccessor));
 ```
 
 ```js
@@ -426,9 +444,7 @@ drawScatter();
 
 ## Step Five: Draw Data
 
-We'll discuss data joins - one of the trickiest parts of d3, and necessary for updating our charts & binding our visualization to data.
-
-Drawing our scatter plot dots will be different from how we drew our timeline. Instead of one line covering all the data points we want one element per data point.
+Drawing our scatter plot dots will be different from how we drew our timeline in the previous lesson. Instead of one line covering all the data points we want one element per data point.
 
 We'll use the `<circle>` SVG element with `cx` and `cy` attributes which set its x and y coordinates. These position the center of the circle, and the `r` attribute sets the circle's radius (half of its width or height).
 
@@ -444,7 +460,7 @@ bounds
 
 Now let's add one circle for each day.
 
-One way of drawing the dots would be to map over each element in the dataset and append a circle to our bounds.
+One way of drawing the dots would be to loop over each element in the dataset and append a circle to our bounds.
 
 We grab the values for `cx` and `cy` from our data using our scales and passing in our accessors:
 
@@ -460,7 +476,7 @@ dataset.forEach((d) => {
 
 While this method of drawing the dots works, we're adding a level of nesting which makes our code harder to read.
 
-If we run this function twice, we'll end up drawing two sets of dots on top of each other.
+Also, if we run this function twice, we'll end up drawing two sets of dots on top of each other.
 
 When we start updating our charts, we will want to draw and update our data with the same code to prevent repeating ourselves.
 
@@ -471,17 +487,15 @@ D3 has functions that will help us address these issues and keep our code clean.
 Delete the last `forEach` block of code.
 
 ```js
-  const dots = bounds.selectAll("circle").data(dataset);
+const dots = bounds.selectAll("circle").data(dataset);
 
-  dots
-    // NEW
-    .join("circle")
-    .attr("cx", (d) => xScale(xAccessor(d)))
-    .attr("cy", (d) => yScale(yAccessor(d)))
-    .attr("r", 5)
-    .attr("fill", "cornflowerblue");
-}
-drawScatter();
+dots
+  // NEW
+  .join("circle")
+  .attr("cx", (d) => xScale(xAccessor(d)))
+  .attr("cy", (d) => yScale(yAccessor(d)))
+  .attr("r", 5)
+  .attr("fill", "cornflowerblue");
 ```
 
 Code so far:
@@ -592,7 +606,7 @@ const xAxisLabel = xAxis
   .attr("y", dimensions.margin.bottom - 10)
   .attr("fill", "black")
   .style("font-size", "1.4em")
-  .html("Dew point (°F)");
+  .html("Dew point (&deg;F)");
 ```
 
 > We need to explicitly set the text fill to black because it inherits the `fill` value of `none` that d3 sets on the axis `<g>` element.
@@ -669,6 +683,8 @@ const colorScale = d3
 ```
 
 If we log `colorScale(0.1)` to the console, we should see a color value, such as `rgb(126, 193, 219)`.
+
+`console.log(colorScale(0.1));`
 
 Update how we set the fill of each dot. Here's where we're doing that now:
 
@@ -802,7 +818,7 @@ Let's first fill out our `onMouseEnter()` function. We want to display two value
 - the metric on our x axis (dew point)
 - the metric on our y axis (humidity)
 
-  For both metrics, we'll want to define a string formatter using `d3.format()`. Then we'll use that formatter to set the text value of the relevant `<span/>` in our tooltip.
+  For both metrics, we'll want to define a string formatter using [d3.format()](https://github.com/d3/d3-format). Then we'll use that formatter to set the text value of the relevant `<span/>` in our tooltip.
 
 ```js
 function onMouseEnter(event, d) {
@@ -817,8 +833,16 @@ function onMouseEnter(event, d) {
 Let's add an extra bit of information at the bottom of this function — users will probably want to know the date of the hovered point. Our data point's date is formatted as a string, but not in a very human-readable format (for example, "2019-01-01"). Let's use `d3.timeParse` to turn that string into a date that we can re-format.
 
 ```js
-const dateParser = d3.timeParse("%Y-%m-%d");
-console.log(dateParser(d.date));
+function onMouseEnter(event, d) {
+  const formatHumidity = d3.format(".2f");
+  tooltip.select("#humidity").text(formatHumidity(yAccessor(d)));
+
+  const formatDewPoint = d3.format(".2f");
+  tooltip.select("#dew-point").text(formatDewPoint(xAccessor(d)));
+  // NEW
+  const dateParser = d3.timeParse("%Y-%m-%d");
+  console.log(dateParser(d.date));
+}
 ```
 
 Now we need to turn our date object into a friendlier string. The d3-time-format module can help us out. `d3.timeFormat()` will take a date formatter string and return a formatter function.
