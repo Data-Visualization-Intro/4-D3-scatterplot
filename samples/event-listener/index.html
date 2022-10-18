@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Event Listeners</title>
+    <style>
+      body {
+        font: 1rem/1.5 sans-serif;
+        background-color: black;
+        color: white;
+      }
+
+      p span {
+        font-size: 200%;
+        color: papayawhip;
+      }
+
+      img {
+        padding: 16px;
+        margin: 1em;
+        border: 1px solid #fff;
+      }
+    </style>
+  </head>
+  <body id="top">
+    <h1>Hello world!</h1>
+    <main>
+      <img
+        class="kitten-pic"
+        src="http://placekitten.com/320/240"
+        alt="click the kitten"
+      />
+
+      <p>
+        You clicked on the kitten
+        <span class="kitten-num" aria-live="polite">0</span> times
+      </p>
+    </main>
+  </body>
+  <script>
+    const kittenPic = document.querySelector(".kitten-pic");
+
+    let kittenClicks = 0;
+
+    // use an arrow callback function to handle the click event
+    kittenPic.addEventListener("click", handleClicks);
+
+    function handleClicks() {
+      kittenClicks++;
+      console.log("You kitten clicked " + kittenClicks + " times.");
+      document.querySelector(".kitten-num").innerText = kittenClicks;
+    }
+  </script>
+</html>

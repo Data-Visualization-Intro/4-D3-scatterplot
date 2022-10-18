@@ -793,6 +793,8 @@ body {
 
 At the bottom of the JS file, we'll select all of our <circle/> elements and add a mousenter and a mouseleave event.
 
+(Review the event listener directory in samples.)
+
 ```js
 bounds
   .selectAll("circle")
@@ -850,9 +852,9 @@ Now we need to turn our date object into a friendlier string. The d3-time-format
 The date formatter string uses the same syntax as d3.timeParse — it follows four rules:
 
 1. it will return the string verbatim, other than specific directives,
-1. these directives contain a percent sign and a letter,
-1. usually the letter in a directive has two formats: lowercase (abbreviated) and uppercase (full), and
-1. a dash (-) between the percent sign and the letter prevents padding of numbers.
+2. these directives contain a percent sign and a letter,
+3. usually the letter in a directive has two formats: lowercase (abbreviated) and uppercase (full), and
+4. a dash (-) between the percent sign and the letter prevents padding of numbers.
 
 For example, `d3.timeFormat("%Y")(new Date())` will return the current year.
 
@@ -893,7 +895,7 @@ const x = xScale(xAccessor(d)) + dimensions.margin.left;
 const y = yScale(yAccessor(d)) + dimensions.margin.top;
 ```
 
-We'll use CSS's `calc()` to add these values to the percentage offsets needed to shift the tooltip. This is necessary so that we're positioning its arrow, not the top left corner.
+We'll use CSS's [calc()](https://developer.mozilla.org/en-US/docs/Web/CSS/calc) to add these values to the percentage offsets needed to shift the tooltip. This is necessary so that we're positioning its arrow, not the top left corner. (See css-calc in samples.)
 
 ```js
 tooltip.style(
