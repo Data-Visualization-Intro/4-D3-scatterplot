@@ -1,5 +1,5 @@
 var margin = { top: 10, right: 20, bottom: 30, left: 30 };
-var width = 400 - margin.left - margin.right;
+var width = 800 - margin.left - margin.right;
 var height = 565 - margin.top - margin.bottom;
 
 async function drawLineChart() {
@@ -54,9 +54,10 @@ async function drawLineChart() {
 
   svg
     .selectAll(".area")
-    .data(data)
-    .enter()
-    .append("path")
+    .data(dataset)
+    // .enter()
+    // .append("path")
+    .join("path")
     .attr("class", "area")
     .attr("d", (d) => area(d.values))
     .style("stroke", (d, i) => ["#FF9900", "#3369E8"][i])
@@ -64,3 +65,5 @@ async function drawLineChart() {
     .style("fill", (d, i) => ["#FF9900", "#3369E8"][i])
     .style("fill-opacity", 0.5);
 }
+
+drawLineChart();

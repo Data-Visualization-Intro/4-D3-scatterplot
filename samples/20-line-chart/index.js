@@ -35,13 +35,17 @@ async function drawLineChart() {
     .attr("transform", `translate(0, ${height})`)
     .call(d3.axisBottom(xScale).ticks(5));
 
+  const yAccessor = (d) => d.close;
+
   var yScale = d3
     .scaleLinear()
     .domain([
-      d3.min(dataset, (co) => d3.min(co.values, (d) => d.close)),
-      d3.max(dataset, (co) => d3.max(co.values, (d) => d.close)),
+      // because we have multiple companies
+      d3.min(dataset, (company) => d3.min(company.values, yAccessor)),
+      d3.max(dataset, (company) => d3.max(company.values, yAccessor)),
     ])
-    .range([height, 0]);
+    .range([height, 0])
+    .nice();
 
   svg.append("g").call(d3.axisLeft(yScale));
 
