@@ -52,8 +52,8 @@ async function drawLineChart() {
   var line = d3
     .line()
     .x((d) => xScale(d.date))
-    .y((d) => yScale(d.close))
-    .curve(d3.curveCatmullRom.alpha(0.5));
+    .y((d) => yScale(d.close));
+  // .curve(d3.curveCatmullRom.alpha(0.5));
 
   svg
     .selectAll(".line")
