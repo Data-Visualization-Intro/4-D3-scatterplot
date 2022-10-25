@@ -4,7 +4,7 @@ async function drawScatter() {
 
   const xAccessor = (d) => d.dewPoint;
   const yAccessor = (d) => d.humidity;
-  const colorAccessor = (d) => d.cloudCover;
+  const coverAccessor = (d) => d.cloudCover;
 
   // 2. Create chart dimensions
 
@@ -55,7 +55,7 @@ async function drawScatter() {
 
   const colorScale = d3
     .scaleLinear()
-    .domain(d3.extent(dataset, colorAccessor))
+    .domain(d3.extent(dataset, coverAccessor))
     .range(["skyblue", "darkslategrey"]);
 
   const dots = bounds.selectAll("circle").data(dataset);
@@ -66,7 +66,7 @@ async function drawScatter() {
     .attr("cx", (d) => xScale(xAccessor(d)))
     .attr("cy", (d) => yScale(yAccessor(d)))
     .attr("r", 5)
-    .attr("fill", (d) => colorScale(colorAccessor(d)));
+    .attr("fill", (d) => colorScale(coverAccessor(d)));
 
   const delaunay = d3.Delaunay.from(
     dataset,
@@ -117,11 +117,6 @@ async function drawScatter() {
     .style("transform", "rotate(-90deg)")
     .style("text-anchor", "middle");
 
-  //   bounds
-  //     .selectAll("circle")
-  //     .on("mouseenter", onMouseEnter)
-  //     .on("mouseleave", onMouseLeave);
-
   const tooltip = d3.select("#tooltip");
 
   function onMouseEnter(event, d) {
@@ -134,6 +129,8 @@ async function drawScatter() {
     const dateParser = d3.timeParse("%Y-%m-%d");
     const formatDate = d3.timeFormat("%B %A %-d, %Y");
     tooltip.select("#date").text(formatDate(dateParser(d.date)));
+
+    tooltip.select("#cover").text(`${coverAccessor(d) * 100}%`);
 
     const x = xScale(xAccessor(d)) + dimensions.margin.left;
     const y = yScale(yAccessor(d)) + dimensions.margin.top;
